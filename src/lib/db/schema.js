@@ -20,5 +20,6 @@ export const sessions = sqliteTable('sessions', {
 	notes: text('notes').default(''),
 	timeSpent: integer('time_spent'), // minutes
 	imagePath: text('image_path'),
+	imageSent: integer('image_sent').notNull().default(0),
 	confidence: integer('confidence') // 1–5, null = not yet rated
 });

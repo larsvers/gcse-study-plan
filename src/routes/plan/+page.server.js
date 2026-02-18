@@ -1,9 +1,9 @@
 import { db } from '$lib/db/index.js';
 import { days, sessions } from '$lib/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { fail } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
+import { Resend } from 'resend';
 
 export async function load({ url }) {
 	const allDays = await db.select().from(days).orderBy(days.id);
@@ -62,7 +62,7 @@ export const actions = {
 		return { success: true };
 	},
 
-	// Upload image for a session
+	// Upload image — email it via Resend
 	uploadImage: async ({ request }) => {
 		const data = await request.formData();
 		const id = parseInt(/** @type {string} */ (data.get('id')));
@@ -70,18 +70,29 @@ export const actions = {
 
 		if (!file || file.size === 0) return fail(400, { message: 'No file provided' });
 
+		// Look up session + day for a descriptive subject line
+		const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
+		if (!session) return fail(404, { message: 'Session not found' });
+		const [day] = await db.select().from(days).where(eq(days.id, session.dayId));
+
 		const bytes = await file.arrayBuffer();
 		const buffer = Buffer.from(bytes);
 		const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-		const filename = `session-${id}-${Date.now()}.${ext}`;
+		const label = day?.label ?? 'Unknown day';
+		const subject = session.subject ?? 'Break';
+		const taskSnippet = (session.task ?? '').slice(0, 60);
 
-		const uploadsDir = join(process.cwd(), 'static', 'uploads');
-		mkdirSync(uploadsDir, { recursive: true });
-		writeFileSync(join(uploadsDir, filename), buffer);
+		const resend = new Resend(env.RESEND_API_KEY);
+		await resend.emails.send({
+			from: 'GCSE Revision <onboarding@resend.dev>',
+			to: env.NOTIFY_EMAIL ?? '',
+			subject: `#${id} ${label} — ${subject} — ${taskSnippet}`,
+			text: `Session #${id}\nDay: ${label}\nSubject: ${subject}\nTask: ${session.task}`,
+			attachments: [{ filename: `session-${id}.${ext}`, content: buffer }]
+		});
 
-		const imagePath = `/uploads/${filename}`;
-		await db.update(sessions).set({ imagePath }).where(eq(sessions.id, id));
+		await db.update(sessions).set({ imageSent: 1 }).where(eq(sessions.id, id));
 
-		return { success: true, imagePath };
+		return { success: true };
 	}
 };

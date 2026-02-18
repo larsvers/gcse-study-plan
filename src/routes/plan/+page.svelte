@@ -4,6 +4,9 @@
 
 	let { data } = $props();
 
+	/** @type {Record<number, 'sending' | 'sent'>} */
+	let uploadStatus = $state({});
+
 	/** @type {Record<string, string>} */
 	const METHOD_LABELS = {
 		Blurt: '✏️ Blurt',
@@ -57,24 +60,25 @@
 					<!-- Confidence rating -->
 					<form method="POST" action="?/saveConfidence" use:enhance class="confidence-form">
 						<input type="hidden" name="id" value={session.id} />
-						<label class="confidence-label">Rate
-						<select
-							name="confidence"
-							class="confidence-select"
-							class:c1={session.confidence === 1}
-							class:c2={session.confidence === 2}
-							class:c3={session.confidence === 3}
-							class:c4={session.confidence === 4}
-							class:c5={session.confidence === 5}
-							onchange={(e) => e.currentTarget.closest('form')?.requestSubmit()}
-						>
-							<option value="">—</option>
-							<option value="1" selected={session.confidence === 1}>1</option>
-							<option value="2" selected={session.confidence === 2}>2</option>
-							<option value="3" selected={session.confidence === 3}>3</option>
-							<option value="4" selected={session.confidence === 4}>4</option>
-							<option value="5" selected={session.confidence === 5}>5</option>
-						</select>
+						<label class="confidence-label"
+							>Rate
+							<select
+								name="confidence"
+								class="confidence-select"
+								class:c1={session.confidence === 1}
+								class:c2={session.confidence === 2}
+								class:c3={session.confidence === 3}
+								class:c4={session.confidence === 4}
+								class:c5={session.confidence === 5}
+								onchange={(e) => e.currentTarget.closest('form')?.requestSubmit()}
+							>
+								<option value="">—</option>
+								<option value="1" selected={session.confidence === 1}>1</option>
+								<option value="2" selected={session.confidence === 2}>2</option>
+								<option value="3" selected={session.confidence === 3}>3</option>
+								<option value="4" selected={session.confidence === 4}>4</option>
+								<option value="5" selected={session.confidence === 5}>5</option>
+							</select>
 						</label>
 					</form>
 
@@ -124,12 +128,24 @@
 					method="POST"
 					action="?/uploadImage"
 					enctype="multipart/form-data"
-					use:enhance
-					class="upload-form"
+					use:enhance={() => {
+						uploadStatus[session.id] = 'sending';
+						return async ({ update }) => {
+							uploadStatus[session.id] = 'sent';
+							await update();
+						};
+					}}
+					class="upload-row"
 				>
 					<input type="hidden" name="id" value={session.id} />
-					<label>
-						Upload image
+					<label class="upload-btn">
+						{#if uploadStatus[session.id] === 'sending'}
+							Sending…
+						{:else if uploadStatus[session.id] === 'sent' || session.imageSent}
+							✓ Sent!
+						{:else}
+							📎 Upload image
+						{/if}
 						<input
 							type="file"
 							name="image"
@@ -281,8 +297,6 @@
 		border-color: #2a8a5a;
 		color: #50e090;
 	}
-	.done-form {
-	}
 	.done-label {
 		display: flex;
 		align-items: center;
@@ -296,12 +310,44 @@
 		color: var(--text);
 		line-height: 1.5;
 	}
-	.save-form,
-	.upload-form {
+	.save-form {
 		margin-top: 0.5rem;
 	}
+	.upload-row {
+		margin-top: 0.5rem;
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		font-size: 0.85rem;
+		color: var(--text-muted);
+	}
+	.upload-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.35rem 0.9rem;
+		background: var(--bg);
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		color: var(--text-muted);
+		font-size: 0.85rem;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+	.upload-btn:hover {
+		border-color: var(--accent);
+		color: var(--accent-dark);
+	}
+	.upload-btn input[type='file'] {
+		position: absolute;
+		width: 0;
+		height: 0;
+		opacity: 0;
+		overflow: hidden;
+		pointer-events: none;
+	}
 	.form-row {
-		margin-bottom: 0.5rem;
+		margin-bottom: 0.9rem;
 	}
 	.form-row label {
 		display: flex;
@@ -356,13 +402,6 @@
 	}
 	button[type='submit']:hover {
 		background: var(--accent-dark);
-	}
-	.upload-form label {
-		font-size: 0.85rem;
-		color: var(--text-muted);
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
 	}
 	.image-preview {
 		margin-top: 0.75rem;
