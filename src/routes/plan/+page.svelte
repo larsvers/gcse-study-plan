@@ -128,24 +128,34 @@
 <style>
 	.day-tabs {
 		display: flex;
-		gap: 0.5rem;
+		gap: 0.35rem;
 		flex-wrap: wrap;
-		margin-bottom: 1rem;
+		margin-bottom: 1.25rem;
 	}
 	.tab {
-		padding: 0.4rem 0.8rem;
-		border: 1px solid #999;
+		padding: 0.4rem 0.9rem;
+		border: 1px solid var(--border);
+		border-radius: 6px;
 		text-decoration: none;
-		color: inherit;
+		color: var(--text-muted);
+		background: var(--card);
+		font-size: 0.9rem;
+		font-weight: 500;
+		transition: all 0.15s;
+	}
+	.tab:hover {
+		border-color: var(--accent);
+		color: var(--accent-dark);
+		text-decoration: none;
 	}
 	.tab.active {
-		background: #1a3a5c;
-		color: white;
-		border-color: #1a3a5c;
+		background: var(--accent);
+		color: #fff;
+		border-color: var(--accent);
 	}
 	.focus {
-		color: #555;
-		margin-bottom: 1.5rem;
+		color: var(--text-muted);
+		margin-bottom: 1.25rem;
 	}
 	.sessions {
 		display: flex;
@@ -155,19 +165,21 @@
 	.break-row {
 		display: flex;
 		gap: 1rem;
-		padding: 0.4rem 0;
-		color: #777;
+		padding: 0.5rem 1rem;
+		color: var(--text-muted);
 		font-style: italic;
-		font-size: 0.9rem;
+		font-size: 0.85rem;
+		border-left: 3px solid var(--border);
 	}
 	.session-card {
-		border: 1px solid #ccc;
-		padding: 1rem;
-		border-radius: 4px;
+		background: var(--card);
+		border: 1px solid var(--border);
+		padding: 1rem 1.25rem;
+		border-radius: var(--radius);
+		transition: opacity 0.2s;
 	}
 	.session-card.done {
-		opacity: 0.6;
-		background: #f9f9f9;
+		opacity: 0.5;
 	}
 	.session-header {
 		display: flex;
@@ -177,19 +189,21 @@
 		margin-bottom: 0.5rem;
 	}
 	.time {
-		font-weight: bold;
+		font-weight: 700;
 		min-width: 3.5rem;
+		color: var(--accent-dark);
 	}
 	.subject {
-		font-weight: bold;
+		font-weight: 600;
 		font-size: 1.05rem;
 	}
 	.method {
-		font-size: 0.8rem;
-		padding: 0.15rem 0.5rem;
-		background: #e8f0fe;
-		border-radius: 3px;
-		color: #1a3a5c;
+		font-size: 0.78rem;
+		padding: 0.2rem 0.6rem;
+		background: color-mix(in srgb, var(--accent) 25%, transparent);
+		border-radius: 4px;
+		color: var(--accent-dark);
+		font-weight: 500;
 	}
 	.done-form {
 		margin-left: auto;
@@ -199,11 +213,13 @@
 		align-items: center;
 		gap: 0.3rem;
 		cursor: pointer;
-		font-size: 0.9rem;
+		font-size: 0.85rem;
+		color: var(--text-muted);
 	}
 	.task {
 		margin: 0 0 0.75rem;
-		color: #333;
+		color: var(--text);
+		line-height: 1.5;
 	}
 	.save-form,
 	.upload-form {
@@ -217,7 +233,7 @@
 		flex-direction: column;
 		gap: 0.25rem;
 		font-size: 0.85rem;
-		color: #555;
+		color: var(--text-muted);
 	}
 	.form-row-inline {
 		display: flex;
@@ -232,17 +248,39 @@
 		width: 100%;
 		font-family: inherit;
 		font-size: 0.9rem;
-		padding: 0.4rem;
+		padding: 0.5rem;
 		box-sizing: border-box;
 		resize: vertical;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+	}
+	textarea:focus,
+	input[type='number']:focus {
+		outline: none;
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+	}
+	input[type='number'] {
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 0.35rem 0.5rem;
 	}
 	button[type='submit'] {
-		padding: 0.35rem 0.9rem;
+		padding: 0.4rem 1rem;
 		cursor: pointer;
+		background: var(--accent);
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		font-weight: 500;
+		transition: background 0.15s;
+	}
+	button[type='submit']:hover {
+		background: var(--accent-dark);
 	}
 	.upload-form label {
 		font-size: 0.85rem;
-		color: #555;
+		color: var(--text-muted);
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
@@ -253,6 +291,7 @@
 	.image-preview img {
 		max-width: 100%;
 		max-height: 300px;
-		border: 1px solid #ccc;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
 	}
 </style>
