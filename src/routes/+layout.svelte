@@ -1,11 +1,12 @@
 <script>
+	import { resolve } from '$app/paths';
 	let { children } = $props();
 </script>
 
 <nav>
-	<a href="/">Home</a>
-	<a href="/plan">Plan</a>
-	<a href="/rate">Confidence</a>
+	<a href={resolve('/')}>Home</a>
+	<a href={resolve('/plan')}>Plan</a>
+	<a href={resolve('/rate')}>Confidence</a>
 </nav>
 
 <main>

@@ -1,13 +1,14 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 
 	let { data } = $props();
 
 	/** @type {Record<string, string>} */
 	const METHOD_LABELS = {
-		Blurt: '⁂ Blurt',
-		'Past Paper': '◉ Past Paper',
-		Feynman: '⚙ Feynman',
+		Blurt: '✏️ Blurt',
+		'Past Paper': '🗞️ Past Paper',
+		Feynman: '🫧 Feynman',
 		'Active Recall': '★ Active Recall'
 	};
 </script>
@@ -20,9 +21,9 @@
 
 <!-- Day tabs -->
 <nav class="day-tabs">
-	{#each data.days as day}
+	{#each data.days as day (day)}
 		<a
-			href="/plan?day={day.id}"
+			href={resolve(`/plan?day=${day.id}`)}
 			class="tab"
 			class:active={day.id === data.activeDay.id}
 		>
@@ -54,12 +55,7 @@
 					{/if}
 
 					<!-- Done toggle -->
-					<form
-						method="POST"
-						action="?/toggleDone"
-						use:enhance
-						class="done-form"
-					>
+					<form method="POST" action="?/toggleDone" use:enhance class="done-form">
 						<input type="hidden" name="id" value={session.id} />
 						<label class="done-label">
 							<input
