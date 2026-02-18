@@ -2,8 +2,9 @@
 export default {
 	schema: './src/lib/db/schema.js',
 	out: './drizzle',
-	dialect: 'sqlite',
+	dialect: 'turso',
 	dbCredentials: {
-		url: 'local.db'
+		url: process.env.TURSO_DATABASE_URL ?? 'file:local.db',
+		authToken: process.env.TURSO_AUTH_TOKEN
 	}
 };
