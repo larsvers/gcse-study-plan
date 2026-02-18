@@ -46,7 +46,7 @@
 		transition: background 0.15s;
 	}
 	.links a:hover {
-		background: #f1f5f9;
+		background: var(--border);
 		text-decoration: none;
 	}
 	.links a.active {

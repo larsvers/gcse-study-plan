@@ -96,7 +96,7 @@
 		border-radius: 0 var(--radius) 0 0;
 	}
 	tbody tr:hover {
-		background: #f8fafc;
+		background: var(--border);
 	}
 	tbody tr:last-child td {
 		border-bottom: none;
@@ -118,6 +118,7 @@
 		padding: 0.25rem;
 		cursor: pointer;
 		background: var(--card);
+		color: var(--text);
 		transition: border-color 0.15s;
 	}
 	.rating-select:focus {
@@ -126,15 +127,18 @@
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 	}
 	.rating-select.rated-1 {
-		background: #fce4e4;
-		border-color: #f5a5a5;
+		background: #4a1c1c;
+		border-color: #8b3a3a;
+		color: #f5a5a5;
 	}
 	.rating-select.rated-2 {
-		background: #fff3cd;
-		border-color: #f0d060;
+		background: #4a3a0e;
+		border-color: #8b7020;
+		color: #f0d060;
 	}
 	.rating-select.rated-3 {
-		background: #d4edda;
-		border-color: #7bc88f;
+		background: #1a3a24;
+		border-color: #3b7a4f;
+		color: #7bc88f;
 	}
 </style>

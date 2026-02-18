@@ -253,6 +253,8 @@
 		resize: vertical;
 		border: 1px solid var(--border);
 		border-radius: 6px;
+		background: var(--bg);
+		color: var(--text);
 	}
 	textarea:focus,
 	input[type='number']:focus {
@@ -264,6 +266,8 @@
 		border: 1px solid var(--border);
 		border-radius: 6px;
 		padding: 0.35rem 0.5rem;
+		background: var(--bg);
+		color: var(--text);
 	}
 	button[type='submit'] {
 		padding: 0.4rem 1rem;

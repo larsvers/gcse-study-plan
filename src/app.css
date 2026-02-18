@@ -6,13 +6,13 @@
 }
 
 :root {
-	--accent: rgb(22, 53, 130);
-	--accent-dark: #020fc7;
-	--bg: #f7f9fc;
-	--card: #fff;
-	--border: #e2e8f0;
-	--text: #1e293b;
-	--text-muted: #64748b;
+	--accent: #4d8ef7;
+	--accent-dark: #7bb3ff;
+	--bg: #0d1e37;
+	--card: #142a4a;
+	--border: #1e3a5f;
+	--text: #e2e8f0;
+	--text-muted: #8899b0;
 	--radius: 10px;
 }
 
