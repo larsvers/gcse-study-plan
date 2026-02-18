@@ -19,12 +19,6 @@ export const sessions = sqliteTable('sessions', {
 	done: integer('done').notNull().default(0),
 	notes: text('notes').default(''),
 	timeSpent: integer('time_spent'), // minutes
-	imagePath: text('image_path')
-});
-
-export const confidenceRatings = sqliteTable('confidence_ratings', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	subject: text('subject').notNull(),
-	dayId: integer('day_id').notNull(),
-	rating: integer('rating') // 1, 2, or 3 — null = not yet rated
+	imagePath: text('image_path'),
+	confidence: integer('confidence') // 1–5, null = not yet rated
 });

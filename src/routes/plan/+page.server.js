@@ -50,6 +50,18 @@ export const actions = {
 		return { success: true };
 	},
 
+	// Save confidence rating (1–5)
+	saveConfidence: async ({ request }) => {
+		const data = await request.formData();
+		const id = parseInt(/** @type {string} */ (data.get('id')));
+		const raw = /** @type {string | null} */ (data.get('confidence'));
+		const confidence = raw ? parseInt(raw) : null;
+
+		await db.update(sessions).set({ confidence }).where(eq(sessions.id, id));
+
+		return { success: true };
+	},
+
 	// Upload image for a session
 	uploadImage: async ({ request }) => {
 		const data = await request.formData();

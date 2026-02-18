@@ -11,7 +11,6 @@
 	<div class="links">
 		<a href={resolve('/')} class:active={page.url.pathname === '/'}>Home</a>
 		<a href={resolve('/plan')} class:active={page.url.pathname.startsWith('/plan')}>Plan</a>
-		<a href={resolve('/rate')} class:active={page.url.pathname.startsWith('/rate')}>Confidence</a>
 	</div>
 </nav>
 

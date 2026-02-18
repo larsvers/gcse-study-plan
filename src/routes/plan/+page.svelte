@@ -54,6 +54,30 @@
 						<span class="method">{METHOD_LABELS[session.method] ?? session.method}</span>
 					{/if}
 
+					<!-- Confidence rating -->
+					<form method="POST" action="?/saveConfidence" use:enhance class="confidence-form">
+						<input type="hidden" name="id" value={session.id} />
+						<label class="confidence-label">Rate
+						<select
+							name="confidence"
+							class="confidence-select"
+							class:c1={session.confidence === 1}
+							class:c2={session.confidence === 2}
+							class:c3={session.confidence === 3}
+							class:c4={session.confidence === 4}
+							class:c5={session.confidence === 5}
+							onchange={(e) => e.currentTarget.closest('form')?.requestSubmit()}
+						>
+							<option value="">—</option>
+							<option value="1" selected={session.confidence === 1}>1</option>
+							<option value="2" selected={session.confidence === 2}>2</option>
+							<option value="3" selected={session.confidence === 3}>3</option>
+							<option value="4" selected={session.confidence === 4}>4</option>
+							<option value="5" selected={session.confidence === 5}>5</option>
+						</select>
+						</label>
+					</form>
+
 					<!-- Done toggle -->
 					<form method="POST" action="?/toggleDone" use:enhance class="done-form">
 						<input type="hidden" name="id" value={session.id} />
@@ -205,8 +229,59 @@
 		color: var(--accent-dark);
 		font-weight: 500;
 	}
-	.done-form {
+	.confidence-form {
 		margin-left: auto;
+	}
+	.confidence-label {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.85rem;
+		color: var(--text-muted);
+		cursor: pointer;
+	}
+	.confidence-select {
+		width: 3rem;
+		text-align: center;
+		font-size: 0.9rem;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 0.2rem;
+		cursor: pointer;
+		background: var(--bg);
+		color: var(--text);
+		transition: border-color 0.15s;
+	}
+	.confidence-select:focus {
+		outline: none;
+		border-color: var(--accent);
+	}
+	.confidence-select.c1 {
+		background: #4a1c1c;
+		border-color: #8b3a3a;
+		color: #f5a5a5;
+	}
+	.confidence-select.c2 {
+		background: #4a3a0e;
+		border-color: #8b7020;
+		color: #f0d060;
+	}
+	.confidence-select.c3 {
+		background: #3a3a0e;
+		border-color: #7a7a20;
+		color: #d0d060;
+	}
+	.confidence-select.c4 {
+		background: #1a3a24;
+		border-color: #3b7a4f;
+		color: #7bc88f;
+	}
+	.confidence-select.c5 {
+		background: #0e3a2a;
+		border-color: #2a8a5a;
+		color: #50e090;
+	}
+	.done-form {
 	}
 	.done-label {
 		display: flex;

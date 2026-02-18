@@ -17,7 +17,7 @@
 		<li>Each session is 20 minutes. When the timer goes, you stop.</li>
 		<li>Breaks are real breaks. Stand up. Walk around. Get a drink. Phone stays in another room during study blocks.</li>
 		<li>You don't need to know everything. You need to practise the right things.</li>
-		<li>After each session, rate your confidence 1–3 on the <a href={resolve('/rate')}>Confidence page</a>.</li>
+		<li>After each session, rate your confidence 1–5 on the session card.</li>
 		<li>If a session goes well, great. If it doesn't, also great — you've found what needs work.</li>
 	</ol>
 </div>
