@@ -13,7 +13,9 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"db:seed": "node src/lib/db/seed.js",
-		"db:push": "drizzle-kit push"
+		"db:push": "drizzle-kit push",
+		"db:export": "node --env-file=.env scripts/export-csv.js",
+		"db:import": "node --env-file=.env scripts/import-csv.js"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",
