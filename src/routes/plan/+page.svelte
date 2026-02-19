@@ -64,7 +64,7 @@
 			</div>
 		{:else}
 			<!-- Study session card -->
-			<div class="session-card">
+			<div class="session-card" class:done={session.done}>
 				{#if session.done}
 					<span class="done-check">✓</span>
 				{/if}
@@ -477,6 +477,10 @@
 	}
 	button[type='submit']:hover {
 		background: var(--accent-dark);
+	}
+	.session-card.done button[type='submit'] {
+		background: color-mix(in srgb, var(--accent) 25%, transparent);
+		color: var(--accent-dark);
 	}
 	.image-preview {
 		margin-top: 0.75rem;
