@@ -1,11 +1,18 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { marked } from 'marked';
 
 	let { data } = $props();
 
 	/** @type {Record<number, 'sending' | 'sent'>} */
 	let uploadStatus = $state({});
+
+	/** @type {Record<number, boolean>} */
+	let workExpanded = $state({});
+
+	/** @type {Record<number, boolean>} */
+	let evalExpanded = $state({});
 
 	/** @type {Record<string, string>} */
 	const METHOD_LABELS = {
@@ -14,6 +21,14 @@
 		Feynman: '🫧 Feynman',
 		'Active Recall': '★ Active Recall'
 	};
+
+	/**
+	 * @param {string} md
+	 * @returns {string}
+	 */
+	function renderMarkdown(md) {
+		return /** @type {string} */ (marked.parse(md));
+	}
 </script>
 
 <svelte:head>
@@ -49,7 +64,10 @@
 			</div>
 		{:else}
 			<!-- Study session card -->
-			<div class="session-card" class:done={session.done}>
+			<div class="session-card">
+				{#if session.done}
+					<span class="done-check">✓</span>
+				{/if}
 				<div class="session-header">
 					<span class="time">{session.time}</span>
 					<span class="subject">{session.subject}</span>
@@ -160,6 +178,50 @@
 						<img src={session.imagePath} alt="Work for this session" />
 					</div>
 				{/if}
+
+				<!-- Student's work -->
+				{#if session.work}
+					<div class="work-section">
+						<div class="section-header">
+							<span class="section-title">Work</span>
+						</div>
+						<div class="collapsible-body" class:expanded={workExpanded[session.id]}>
+							<p class="collapsible-text">{session.work}</p>
+						</div>
+						<button
+							type="button"
+							class="toggle-btn"
+							onclick={() => (workExpanded[session.id] = !workExpanded[session.id])}
+						>
+							{workExpanded[session.id] ? 'Show less' : 'Show more'}
+						</button>
+					</div>
+				{/if}
+
+				<!-- Evaluation -->
+				{#if session.evaluation}
+					<div class="eval-section">
+						<div class="section-header">
+							<span class="section-title">Evaluation</span>
+							{#if session.mark}
+								<span class="eval-mark">{session.mark}</span>
+							{/if}
+						</div>
+						<div class="collapsible-body" class:expanded={evalExpanded[session.id]}>
+							<div class="eval-prose">
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted DB content -->
+								{@html renderMarkdown(session.evaluation)}
+							</div>
+						</div>
+						<button
+							type="button"
+							class="toggle-btn"
+							onclick={() => (evalExpanded[session.id] = !evalExpanded[session.id])}
+						>
+							{evalExpanded[session.id] ? 'Show less' : 'Show more'}
+						</button>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	{/each}
@@ -212,14 +274,27 @@
 		border-left: 3px solid var(--border);
 	}
 	.session-card {
+		position: relative;
 		background: var(--card);
 		border: 1px solid var(--border);
 		padding: 1rem 1.25rem;
 		border-radius: var(--radius);
-		transition: opacity 0.2s;
 	}
-	.session-card.done {
-		opacity: 0.5;
+	.done-check {
+		position: absolute;
+		top: -0.5rem;
+		right: -0.5rem;
+		width: 2rem;
+		height: 2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--accent);
+		color: #fff;
+		border-radius: 50%;
+		font-size: 1.1rem;
+		font-weight: 700;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 	}
 	.session-header {
 		display: flex;
@@ -411,5 +486,95 @@
 		max-height: 300px;
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
+	}
+	/* Shared styles for Work and Evaluation sections */
+	.work-section,
+	.eval-section {
+		margin-top: 0.75rem;
+		padding: 0.75rem 1rem;
+		background: var(--bg);
+		border: 1px solid var(--border);
+		border-radius: 6px;
+	}
+	.section-header {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-bottom: 0.4rem;
+	}
+	.section-title {
+		font-size: 0.8rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--text-muted);
+	}
+	.eval-mark {
+		font-size: 0.85rem;
+		font-weight: 700;
+		padding: 0.15rem 0.5rem;
+		background: color-mix(in srgb, var(--accent) 25%, transparent);
+		border-radius: 4px;
+		color: var(--accent-dark);
+	}
+	.collapsible-body {
+		max-height: 3.6em;
+		overflow: hidden;
+		transition: max-height 0.3s ease;
+	}
+	.collapsible-body.expanded {
+		max-height: none;
+	}
+	.collapsible-text {
+		margin: 0;
+		font-size: 0.9rem;
+		line-height: 1.5;
+		color: var(--text);
+		white-space: pre-wrap;
+	}
+	/* Markdown prose styling */
+	.eval-prose {
+		font-size: 0.9rem;
+		line-height: 1.6;
+		color: var(--text);
+	}
+	.eval-prose :global(h1),
+	.eval-prose :global(h2),
+	.eval-prose :global(h3) {
+		margin: 0.6rem 0 0.3rem;
+		color: var(--text);
+		font-size: 0.95rem;
+	}
+	.eval-prose :global(p) {
+		margin: 0 0 0.5rem;
+	}
+	.eval-prose :global(ul),
+	.eval-prose :global(ol) {
+		margin: 0 0 0.5rem;
+		padding-left: 1.4rem;
+	}
+	.eval-prose :global(li) {
+		margin-bottom: 0.2rem;
+	}
+	.eval-prose :global(strong) {
+		color: var(--accent-dark);
+	}
+	.eval-prose :global(blockquote) {
+		margin: 0.4rem 0;
+		padding: 0.3rem 0.8rem;
+		border-left: 3px solid var(--accent);
+		color: var(--text-muted);
+	}
+	.toggle-btn {
+		margin-top: 0.3rem;
+		padding: 0;
+		background: none;
+		border: none;
+		color: var(--accent);
+		font-size: 0.8rem;
+		cursor: pointer;
+	}
+	.toggle-btn:hover {
+		color: var(--accent-dark);
 	}
 </style>

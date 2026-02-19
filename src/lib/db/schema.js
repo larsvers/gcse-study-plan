@@ -21,5 +21,8 @@ export const sessions = sqliteTable('sessions', {
 	timeSpent: integer('time_spent'), // minutes
 	imagePath: text('image_path'),
 	imageSent: integer('image_sent').notNull().default(0),
-	confidence: integer('confidence') // 1–5, null = not yet rated
+	confidence: integer('confidence'), // 1–5, null = not yet rated
+	work: text('work'), // transcription of student's written work
+	mark: text('mark'), // e.g. '6-7', '7+', 'A'
+	evaluation: text('evaluation') // LLM feedback text
 });
