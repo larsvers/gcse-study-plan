@@ -194,5 +194,6 @@ npm run lint         # Prettier + ESLint check
 npm run format       # Auto-format with Prettier
 npm run db:seed      # Seed local database
 npm run db:export    # Export days + sessions to data/*.csv
+npm run db:exportall # Export days + sessions with ALL columns to data/*.csv
 npm run db:import    # Import new CSV rows (blank id) into DB
 ```

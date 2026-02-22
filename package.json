@@ -15,6 +15,7 @@
 		"db:seed": "node src/lib/db/seed.js",
 		"db:push": "drizzle-kit push",
 		"db:export": "node --env-file=.env scripts/export-csv.js",
+		"db:exportall": "node --env-file=.env scripts/export-csv.js --all",
 		"db:import": "node --env-file=.env scripts/import-csv.js"
 	},
 	"devDependencies": {

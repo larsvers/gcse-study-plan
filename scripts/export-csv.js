@@ -1,5 +1,6 @@
 // Export days and sessions from Turso to CSV files in data/
-// Usage: TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... node scripts/export-csv.js
+// Usage: TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... node scripts/export-csv.js [--all]
+// --all  exports every column; default exports only the planning subset
 
 import { createClient } from '@libsql/client';
 import { writeFileSync, mkdirSync } from 'fs';
@@ -28,6 +29,8 @@ function toCsv(headers, rows) {
 	return lines.join('\n') + '\n';
 }
 
+const exportAll = process.argv.includes('--all');
+
 mkdirSync('data', { recursive: true });
 
 // Export days
@@ -36,10 +39,12 @@ const daysHeaders = ['id', 'date', 'label', 'focus'];
 writeFileSync('data/days.csv', '\uFEFF' + toCsv(daysHeaders, /** @type {any[]} */ (daysResult.rows)));
 console.log(`Exported ${daysResult.rows.length} days → data/days.csv`);
 
-// Export sessions (only the columns useful for planning)
+// Export sessions
+const sessionsHeaders = exportAll
+	? ['id', 'day_id', 'sort_order', 'time', 'subject', 'task', 'method', 'is_break', 'done', 'notes', 'time_spent', 'image_path', 'image_sent', 'confidence', 'work', 'mark', 'evaluation']
+	: ['id', 'day_id', 'sort_order', 'time', 'subject', 'task', 'method', 'is_break'];
 const sessionsResult = await db.execute(
-	'SELECT id, day_id, sort_order, time, subject, task, method, is_break FROM sessions ORDER BY day_id, sort_order'
+	`SELECT ${sessionsHeaders.join(', ')} FROM sessions ORDER BY day_id, sort_order`
 );
-const sessionsHeaders = ['id', 'day_id', 'sort_order', 'time', 'subject', 'task', 'method', 'is_break'];
 writeFileSync('data/sessions.csv', '\uFEFF' + toCsv(sessionsHeaders, /** @type {any[]} */ (sessionsResult.rows)));
 console.log(`Exported ${sessionsResult.rows.length} sessions → data/sessions.csv`);
