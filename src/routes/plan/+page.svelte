@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { marked } from 'marked';
+	import { onMount } from 'svelte';
 
 	let { data } = $props();
 
@@ -29,6 +30,10 @@
 	function renderMarkdown(md) {
 		return /** @type {string} */ (marked.parse(md));
 	}
+
+	onMount(() => {
+		document.querySelector('.day-tabs .tab.active')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+	});
 </script>
 
 <svelte:head>
@@ -231,8 +236,11 @@
 	.day-tabs {
 		display: flex;
 		gap: 0.35rem;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
+		overflow-x: auto;
 		margin-bottom: 1.25rem;
+		scrollbar-width: thin;
+		padding-bottom: 0.25rem;
 	}
 	.tab {
 		padding: 0.4rem 0.9rem;

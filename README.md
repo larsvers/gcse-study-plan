@@ -148,20 +148,25 @@ Defined in `src/routes/plan/+page.server.js`:
 ## Adding new days and sessions (CSV workflow)
 
 > [!NOTE]
-> Note that when planning out new sessions, export what has been done before and feed it to a model to help with planning!
+> When planning new sessions, export what has been done before and feed it to a model to help with planning!
 
-The easiest way to add new revision days/sessions is via CSV:
+The easiest way to add new revision days/sessions is via CSV. **Follow this two-phase workflow** to avoid day_id mismatches:
 
 ```sh
-# 1. Export current data to data/days.csv and data/sessions.csv
+# Phase 1 — add new days
+# 1. Export current data
 npm run db:export
 
-# 2. Open the CSVs in Numbers/Excel/Google Sheets
-#    Add new rows at the bottom — leave the "id" column BLANK for new rows
-#    For new sessions, set day_id to the id of the day they belong to
-#    (check days.csv for the day ids)
+# 2. Open data/days.csv, add new day rows at the bottom with a BLANK id column
+#    Do NOT re-add existing days — only add rows that don't exist yet
+npm run db:import
 
-# 3. Import — only rows with a blank id get inserted
+# 3. Export again so you can see the IDs the new days received
+npm run db:export
+
+# Phase 2 — add sessions for those new days
+# 4. Open data/sessions.csv, add new session rows with a BLANK id column
+#    Set day_id to the actual DB id from the days.csv you just exported
 npm run db:import
 ```
 
@@ -174,6 +179,14 @@ The scripts read credentials from your `.env` file automatically (via Node's `--
 - `is_break`: `1` for break rows, `0` for study sessions
 
 Existing rows (with an id) are never modified or deleted by the import script.
+
+### ⚠️ Pitfalls
+
+**Don't re-import existing days.** The import script checks for a blank `id` to decide if a row is new. If you add existing days again with a blank id they'll be inserted as duplicates. Keep rows that already have ids, or remove them from the file entirely.
+
+**Don't use Excel to edit CSVs without protecting the date column.** Excel auto-reformats date-looking values (e.g. `2026-02-18` → `18/02/2026`) when you save. To prevent this: select the `date` column → Format Cells → **Text** *before* editing. Alternatively, use a plain text editor or Google Sheets (which doesn't reformat on CSV export).
+
+**Session `day_id` must be the actual DB id, not a row number.** When you add new days and import them, they get new DB ids (e.g. 16, 17, 18). Your session rows must use those ids — not the sequential 1, 2, 3... you might be tempted to type. Always export after importing days to confirm the ids before filling in sessions.
 
 ## Deployment
 

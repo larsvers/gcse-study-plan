@@ -9,7 +9,13 @@ export async function load({ url }) {
 	const allDays = await db.select().from(days).orderBy(days.id);
 
 	const requestedId = parseInt(url.searchParams.get('day') ?? '0');
-	const activeDay = allDays.find((d) => d.id === requestedId) ?? allDays[0];
+	let activeDay = allDays.find((d) => d.id === requestedId);
+	if (!activeDay) {
+		// Default to today, or the most recent past day, or the first day
+		const today = new Date().toISOString().slice(0, 10);
+		const past = allDays.filter((d) => d.date <= today);
+		activeDay = past.length > 0 ? past[past.length - 1] : allDays[0];
+	}
 
 	const daySessions = await db
 		.select()
