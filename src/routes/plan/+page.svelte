@@ -15,6 +15,9 @@
 	/** @type {Record<number, boolean>} */
 	let evalExpanded = $state({});
 
+	/** @type {Record<number, boolean>} */
+	let workUpdatedExpanded = $state({});
+
 	/** @type {Record<string, string>} */
 	const METHOD_LABELS = {
 		Blurt: '✏️ Blurt',
@@ -224,6 +227,25 @@
 							onclick={() => (evalExpanded[session.id] = !evalExpanded[session.id])}
 						>
 							{evalExpanded[session.id] ? 'Show less' : 'Show more'}
+						</button>
+					</div>
+				{/if}
+
+				<!-- Updated work -->
+				{#if session.workUpdated}
+					<div class="work-section">
+						<div class="section-header">
+							<span class="section-title">Updated work</span>
+						</div>
+						<div class="collapsible-body" class:expanded={workUpdatedExpanded[session.id]}>
+							<p class="collapsible-text">{session.workUpdated}</p>
+						</div>
+						<button
+							type="button"
+							class="toggle-btn"
+							onclick={() => (workUpdatedExpanded[session.id] = !workUpdatedExpanded[session.id])}
+						>
+							{workUpdatedExpanded[session.id] ? 'Show less' : 'Show more'}
 						</button>
 					</div>
 				{/if}

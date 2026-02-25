@@ -24,5 +24,6 @@ export const sessions = sqliteTable('sessions', {
 	confidence: integer('confidence'), // 1–5, null = not yet rated
 	work: text('work'), // transcription of student's written work
 	mark: text('mark'), // e.g. '6-7', '7+', 'A'
-	evaluation: text('evaluation') // LLM feedback text
+	evaluation: text('evaluation'), // LLM feedback text
+	workUpdated: text('work_updated') // improved transcription after feedback
 });
