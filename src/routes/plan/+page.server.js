@@ -1,17 +1,25 @@
 import { db } from '$lib/db/index.js';
 import { sessions } from '$lib/db/schema.js';
-import { eq, asc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { Resend } from 'resend';
 
 export async function load({ url }) {
-	// Get one row per date for the tab navigation
-	const allDays = await db
+	// Get one row per date for the tab navigation — deduped in JS to avoid
+	// Drizzle/libSQL quirks with GROUP BY / DISTINCT on small result sets
+	const allRows = await db
 		.select({ date: sessions.date, label: sessions.label, focus: sessions.focus })
 		.from(sessions)
-		.groupBy(sessions.date)
-		.orderBy(asc(sessions.date));
+		.orderBy(sessions.date);
+	const seen = new Set();
+	const allDays = /** @type {{ date: string; label: string; focus: string }[]} */ ([]);
+	for (const r of allRows) {
+		if (!seen.has(r.date)) {
+			seen.add(r.date);
+			allDays.push(r);
+		}
+	}
 
 	// Determine active date from query param (?day=YYYY-MM-DD), today, or most recent past day
 	const requestedDate = url.searchParams.get('day');
