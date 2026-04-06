@@ -173,9 +173,9 @@ The scripts read credentials from your `.env` file automatically (via Node's `--
 
 To move a session to a different day, just change its `date` (and update `label`/`focus` to match if needed).
 
-### ⚠️ Pitfall: Excel and date columns
+### Excel date reformatting
 
-Excel auto-reformats date-looking values (`2026-02-18` → `18/02/2026`) when you save as CSV. To prevent this: select the `date` column → Format Cells → **Text** _before_ editing. Google Sheets and plain text editors don't have this problem.
+Excel auto-reformats `2026-02-18` style dates to local formats like `18/02/2026`. The import script handles this automatically — it normalises `DD/MM/YYYY` and `MM/DD/YYYY` back to `YYYY-MM-DD` on the way in, so you can use Excel without any special column-formatting steps.
 
 ## Deployment
 

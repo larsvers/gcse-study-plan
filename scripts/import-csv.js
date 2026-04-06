@@ -72,6 +72,26 @@ function parseCsv(csv) {
 	return rows;
 }
 
+/**
+ * Normalise a date value to YYYY-MM-DD regardless of what Excel did to it.
+ * Handles: YYYY-MM-DD (already correct), DD/MM/YYYY (Excel UK), MM/DD/YYYY (Excel US).
+ * @param {string} val
+ * @returns {string}
+ */
+function normalizeDate(val) {
+	if (!val) return val;
+	// Already ISO format
+	if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+	// DD/MM/YYYY (Excel UK locale)
+	const dmyMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+	if (dmyMatch) {
+		const [, d, m, y] = dmyMatch;
+		return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+	}
+	// Fallback: return as-is and let the DB complain if it's truly wrong
+	return val;
+}
+
 if (!existsSync('data/sessions.csv')) {
 	console.log('No data/sessions.csv found — nothing to import.');
 	process.exit(0);
@@ -97,7 +117,7 @@ for (const row of rows) {
 				is_break   = ?
 			WHERE id = ?`,
 			args: [
-				row.date,
+				normalizeDate(row.date),
 				row.label,
 				row.focus,
 				parseInt(row.sort_order) || 0,
@@ -117,7 +137,7 @@ for (const row of rows) {
 			sql: `INSERT INTO sessions (date, label, focus, sort_order, time, subject, task, method, is_break)
 			      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			args: [
-				row.date,
+				normalizeDate(row.date),
 				row.label,
 				row.focus,
 				parseInt(row.sort_order) || 0,
