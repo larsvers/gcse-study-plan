@@ -1,4 +1,4 @@
-// Export days and sessions from Turso to CSV files in data/
+// Export sessions from Turso to data/sessions.csv
 // Usage: TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... node scripts/export-csv.js [--all]
 // --all  exports every column; default exports only the planning subset
 
@@ -31,20 +31,17 @@ function toCsv(headers, rows) {
 
 const exportAll = process.argv.includes('--all');
 
+// Planning columns: what you need to review and edit the schedule
+const planningCols = ['id', 'date', 'label', 'focus', 'sort_order', 'time', 'subject', 'task', 'method', 'is_break'];
+// All columns: includes student progress data
+const allCols = [...planningCols, 'done', 'notes', 'time_spent', 'image_path', 'image_sent', 'confidence', 'work', 'mark', 'evaluation', 'work_updated'];
+
+const headers = exportAll ? allCols : planningCols;
+
 mkdirSync('data', { recursive: true });
 
-// Export days
-const daysResult = await db.execute('SELECT id, date, label, focus FROM days ORDER BY id');
-const daysHeaders = ['id', 'date', 'label', 'focus'];
-writeFileSync('data/days.csv', '\uFEFF' + toCsv(daysHeaders, /** @type {any[]} */ (daysResult.rows)));
-console.log(`Exported ${daysResult.rows.length} days → data/days.csv`);
-
-// Export sessions
-const sessionsHeaders = exportAll
-	? ['id', 'day_id', 'sort_order', 'time', 'subject', 'task', 'method', 'is_break', 'done', 'notes', 'time_spent', 'image_path', 'image_sent', 'confidence', 'work', 'mark', 'evaluation']
-	: ['id', 'day_id', 'sort_order', 'time', 'subject', 'task', 'method', 'is_break'];
-const sessionsResult = await db.execute(
-	`SELECT ${sessionsHeaders.join(', ')} FROM sessions ORDER BY day_id, sort_order`
+const result = await db.execute(
+	`SELECT ${headers.join(', ')} FROM sessions ORDER BY date, sort_order`
 );
-writeFileSync('data/sessions.csv', '\uFEFF' + toCsv(sessionsHeaders, /** @type {any[]} */ (sessionsResult.rows)));
-console.log(`Exported ${sessionsResult.rows.length} sessions → data/sessions.csv`);
+writeFileSync('data/sessions.csv', '\uFEFF' + toCsv(headers, /** @type {any[]} */ (result.rows)));
+console.log(`Exported ${result.rows.length} sessions → data/sessions.csv`);

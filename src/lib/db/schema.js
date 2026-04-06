@@ -1,15 +1,10 @@
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
 
-export const days = sqliteTable('days', {
+export const sessions = sqliteTable('sessions', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	date: text('date').notNull(), // e.g. '2026-02-18'
 	label: text('label').notNull(), // e.g. 'Tuesday 18 February'
-	focus: text('focus').notNull()
-});
-
-export const sessions = sqliteTable('sessions', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	dayId: integer('day_id').notNull(),
+	focus: text('focus').notNull(), // day's learning goal
 	sortOrder: integer('sort_order').notNull(),
 	time: text('time'), // e.g. '10:00', 'Evening'
 	subject: text('subject'), // e.g. 'History', null for breaks

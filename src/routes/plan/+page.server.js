@@ -1,26 +1,34 @@
 import { db } from '$lib/db/index.js';
-import { days, sessions } from '$lib/db/schema.js';
+import { sessions } from '$lib/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { Resend } from 'resend';
 
 export async function load({ url }) {
-	const allDays = await db.select().from(days).orderBy(days.id);
+	// Get distinct days (date/label/focus) for the tab navigation
+	const allDays = await db
+		.selectDistinct({ date: sessions.date, label: sessions.label, focus: sessions.focus })
+		.from(sessions)
+		.orderBy(sessions.date);
 
-	const requestedId = parseInt(url.searchParams.get('day') ?? '0');
-	let activeDay = allDays.find((d) => d.id === requestedId);
-	if (!activeDay) {
-		// Default to today, or the most recent past day, or the first day
+	// Determine active date from query param (?day=YYYY-MM-DD), today, or most recent past day
+	const requestedDate = url.searchParams.get('day');
+	let activeDate =
+		requestedDate && allDays.find((d) => d.date === requestedDate) ? requestedDate : null;
+
+	if (!activeDate) {
 		const today = new Date().toISOString().slice(0, 10);
 		const past = allDays.filter((d) => d.date <= today);
-		activeDay = past.length > 0 ? past[past.length - 1] : allDays[0];
+		activeDate = past.length > 0 ? past[past.length - 1].date : allDays[0]?.date;
 	}
+
+	const activeDay = allDays.find((d) => d.date === activeDate) ?? allDays[0];
 
 	const daySessions = await db
 		.select()
 		.from(sessions)
-		.where(eq(sessions.dayId, activeDay.id))
+		.where(eq(sessions.date, activeDate))
 		.orderBy(sessions.sortOrder);
 
 	return { days: allDays, activeDay, sessions: daySessions };
@@ -76,15 +84,12 @@ export const actions = {
 
 		if (!file || file.size === 0) return fail(400, { message: 'No file provided' });
 
-		// Look up session + day for a descriptive subject line
 		const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
 		if (!session) return fail(404, { message: 'Session not found' });
-		const [day] = await db.select().from(days).where(eq(days.id, session.dayId));
 
 		const bytes = await file.arrayBuffer();
 		const buffer = Buffer.from(bytes);
 		const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-		const label = day?.label ?? 'Unknown day';
 		const subject = session.subject ?? 'Break';
 		const taskSnippet = (session.task ?? '').slice(0, 60);
 
@@ -92,8 +97,8 @@ export const actions = {
 		await resend.emails.send({
 			from: 'GCSE Revision <onboarding@resend.dev>',
 			to: env.NOTIFY_EMAIL ?? '',
-			subject: `#${id} ${label} — ${subject} — ${taskSnippet}`,
-			text: `Session #${id}\nDay: ${label}\nSubject: ${subject}\nTask: ${session.task}`,
+			subject: `#${id} ${session.label} — ${subject} — ${taskSnippet}`,
+			text: `Session #${id}\nDay: ${session.label}\nSubject: ${subject}\nTask: ${session.task}`,
 			attachments: [{ filename: `session-${id}.${ext}`, content: buffer }]
 		});
 

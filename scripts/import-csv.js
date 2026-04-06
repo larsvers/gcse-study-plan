@@ -1,5 +1,6 @@
-// Import new rows from CSV files in data/ into Turso.
-// Only rows with a BLANK id column are inserted. Existing rows (with an id) are skipped.
+// Import sessions from data/sessions.csv into the DB.
+// Rows WITH an id → UPDATE the existing row (lets you edit times, dates, tasks, etc.)
+// Rows WITHOUT an id → INSERT as a new row
 // Usage: TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... node scripts/import-csv.js
 
 import { createClient } from '@libsql/client';
@@ -19,7 +20,7 @@ const db = createClient({
 function parseCsv(csv) {
 	const rows = [];
 	let i = 0;
-	const chars = csv.replace(/\r\n/g, '\n');
+	const chars = csv.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
 
 	function parseField() {
 		if (chars[i] === '"') {
@@ -71,50 +72,54 @@ function parseCsv(csv) {
 	return rows;
 }
 
-// ── Import days ───────────────────────────────────────────────────────────────
-
-let newDayCount = 0;
-/** @type {Map<string, number | bigint>} Map from CSV row index key to new DB id */
-const dayIdMap = new Map();
-
-if (existsSync('data/days.csv')) {
-	const rows = parseCsv(readFileSync('data/days.csv', 'utf-8'));
-	for (let idx = 0; idx < rows.length; idx++) {
-		const row = rows[idx];
-		if (row.id && row.id.trim() !== '') continue; // existing row, skip
-
-		const result = await db.execute({
-			sql: 'INSERT INTO days (date, label, focus) VALUES (?, ?, ?)',
-			args: [row.date, row.label, row.focus]
-		});
-		dayIdMap.set(`new_${idx}`, result.lastInsertRowid);
-		console.log(`  + Day: ${row.label} (id=${result.lastInsertRowid})`);
-		newDayCount++;
-	}
-	console.log(`Days: ${newDayCount} new rows inserted (${rows.length - newDayCount} existing skipped)`);
-} else {
-	console.log('No data/days.csv found — skipping days');
+if (!existsSync('data/sessions.csv')) {
+	console.log('No data/sessions.csv found — nothing to import.');
+	process.exit(0);
 }
 
-// ── Import sessions ───────────────────────────────────────────────────────────
+const rows = parseCsv(readFileSync('data/sessions.csv', 'utf-8'));
+let inserted = 0;
+let updated = 0;
 
-let newSessionCount = 0;
-
-if (existsSync('data/sessions.csv')) {
-	const rows = parseCsv(readFileSync('data/sessions.csv', 'utf-8'));
-	for (const row of rows) {
-		if (row.id && row.id.trim() !== '') continue; // existing row, skip
-
-		const dayId = parseInt(row.day_id);
-		if (isNaN(dayId)) {
-			console.warn(`  ⚠ Skipping session with invalid day_id: "${row.day_id}" — task: ${row.task}`);
-			continue;
-		}
-
+for (const row of rows) {
+	if (row.id && row.id.trim() !== '') {
+		// UPDATE existing row — only overwrites the planning columns, leaves progress data untouched
 		await db.execute({
-			sql: 'INSERT INTO sessions (day_id, sort_order, time, subject, task, method, is_break) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			sql: `UPDATE sessions SET
+				date       = ?,
+				label      = ?,
+				focus      = ?,
+				sort_order = ?,
+				time       = ?,
+				subject    = ?,
+				task       = ?,
+				method     = ?,
+				is_break   = ?
+			WHERE id = ?`,
 			args: [
-				dayId,
+				row.date,
+				row.label,
+				row.focus,
+				parseInt(row.sort_order) || 0,
+				row.time || null,
+				row.subject || null,
+				row.task || null,
+				row.method || null,
+				parseInt(row.is_break) || 0,
+				parseInt(row.id)
+			]
+		});
+		updated++;
+		console.log(`  ~ Updated #${row.id}: ${row.date} ${row.time || ''} ${row.subject || '(break)'}`);
+	} else {
+		// INSERT new row
+		await db.execute({
+			sql: `INSERT INTO sessions (date, label, focus, sort_order, time, subject, task, method, is_break)
+			      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			args: [
+				row.date,
+				row.label,
+				row.focus,
 				parseInt(row.sort_order) || 0,
 				row.time || null,
 				row.subject || null,
@@ -123,17 +128,13 @@ if (existsSync('data/sessions.csv')) {
 				parseInt(row.is_break) || 0
 			]
 		});
-		newSessionCount++;
+		inserted++;
+		console.log(`  + Inserted: ${row.date} ${row.time || ''} ${row.subject || '(break)'}`);
 	}
-	console.log(
-		`Sessions: ${newSessionCount} new rows inserted (${rows.length - newSessionCount} existing skipped)`
-	);
-} else {
-	console.log('No data/sessions.csv found — skipping sessions');
 }
 
-if (newDayCount === 0 && newSessionCount === 0) {
-	console.log('\nNothing to import. Add new rows with a blank "id" column and run again.');
+if (inserted === 0 && updated === 0) {
+	console.log('Nothing to import — CSV had no rows.');
 } else {
-	console.log(`\nDone! Inserted ${newDayCount} days + ${newSessionCount} sessions.`);
+	console.log(`\nDone! ${inserted} inserted, ${updated} updated.`);
 }

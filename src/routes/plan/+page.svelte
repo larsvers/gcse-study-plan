@@ -49,9 +49,9 @@
 <nav class="day-tabs">
 	{#each data.days as day (day)}
 		<a
-			href={resolve(`/plan?day=${day.id}`)}
+			href={resolve(`/plan?day=${day.date}`)}
 			class="tab"
-			class:active={day.id === data.activeDay.id}
+			class:active={day.date === data.activeDay.date}
 		>
 			{day.label}
 		</a>
