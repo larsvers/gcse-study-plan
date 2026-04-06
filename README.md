@@ -19,7 +19,7 @@ src/
   lib/
     db/
       index.js            Drizzle client (uses $env/dynamic/private)
-      schema.js           Drizzle schema (days + sessions tables)
+      schema.js           Drizzle schema (single flat sessions table)
       seed.js             Standalone Node script to seed the database
   routes/
     +layout.svelte        Nav bar (Home, Plan)
@@ -65,11 +65,11 @@ By default, `db/index.js` uses `$env/dynamic/private` to read `TURSO_DATABASE_UR
 
 ## Database
 
-### Schema (two tables)
+### Schema (single flat table)
 
-**`days`**: `id`, `date`, `label`, `focus`
+**`sessions`**: `id`, `date`, `label`, `focus`, `sort_order`, `time`, `subject`, `task`, `method`, `is_break`, `done`, `notes`, `time_spent`, `image_path`, `image_sent`, `confidence`, `work`, `mark`, `evaluation`, `work_updated`
 
-**`sessions`**: `id`, `day_id`, `sort_order`, `time`, `subject`, `task`, `method`, `is_break`, `done`, `notes`, `time_spent`, `image_path`, `image_sent`, `confidence`, `work`, `mark`, `evaluation`
+`date`/`label`/`focus` are the day-level fields — they repeat on every session row for that day. This makes the CSV export self-contained and easy to edit.
 
 The schema is defined in `src/lib/db/schema.js` using Drizzle's `sqliteTable`.
 
@@ -87,25 +87,18 @@ TURSO_AUTH_TOKEN=<token> \
 node src/lib/db/seed.js
 ```
 
-The seed script has an "already seeded" guard -- it skips if `days` already has rows. Delete `local.db` to reseed locally.
+The seed script has an "already seeded" guard — it skips if `sessions` already has rows. Delete `local.db` to reseed locally.
 
-**Note**: The seed script doesn't create the newer columns (`image_sent`, `confidence`, `work`, `mark`, `evaluation`). These were added via `ALTER TABLE` on the live Turso DB. If reseeding from scratch on a new DB, you'd need to add them manually or update the seed script's `CREATE TABLE` statement.
+### One-time migration (days + sessions → flat sessions)
 
-### Running migrations manually
+If you're migrating an existing database from the old two-table schema, run:
 
-There's no migration system. Schema changes are done by running `ALTER TABLE` directly against Turso:
-
-```js
-// Example one-off migration script (run with node)
-import { createClient } from '@libsql/client';
-const client = createClient({
-	url: 'libsql://gcse-larsvers.aws-eu-west-1.turso.io',
-	authToken: '<token>'
-});
-await client.execute('ALTER TABLE sessions ADD COLUMN my_new_col TEXT');
+```sh
+npm run db:migrate                                                       # local.db
+TURSO_DATABASE_URL=libsql://... TURSO_AUTH_TOKEN=<token> npm run db:migrate  # Turso
 ```
 
-After adding a column to Turso, also update `src/lib/db/schema.js` to match.
+This renames `sessions` → `sessions_old`, creates the new flat `sessions` table, copies all data across via a JOIN, then drops `sessions_old` and `days`. **Run once only — it is not idempotent.**
 
 ### Updating session data (work, mark, evaluation)
 
@@ -145,48 +138,44 @@ Defined in `src/routes/plan/+page.server.js`:
 - `saveConfidence` -- saves confidence rating (1-5 or null)
 - `uploadImage` -- emails the uploaded image via Resend, sets `image_sent=1`
 
-## Adding new days and sessions (CSV workflow)
+## Adding and editing sessions (CSV workflow)
 
 > [!NOTE]
-> When planning new sessions, export what has been done before and feed it to a model to help with planning!
+> When planning new sessions, export first and feed the data to a model to help with planning!
 
-The easiest way to add new revision days/sessions is via CSV. **Follow this two-phase workflow** to avoid day_id mismatches:
+All schedule editing goes through a single `data/sessions.csv`. The workflow is:
 
 ```sh
-# Phase 1 — add new days
-# 1. Export current data
+# 1. Export the current schedule
 npm run db:export
 
-# 2. Open data/days.csv, add new day rows at the bottom with a BLANK id column
-#    Do NOT re-add existing days — only add rows that don't exist yet
-npm run db:import
+# 2. Edit data/sessions.csv — change times, move sessions to different dates,
+#    fix tasks, add new rows (leave id blank for new rows)
 
-# 3. Export again so you can see the IDs the new days received
-npm run db:export
-
-# Phase 2 — add sessions for those new days
-# 4. Open data/sessions.csv, add new session rows with a BLANK id column
-#    Set day_id to the actual DB id from the days.csv you just exported
+# 3. Import back
 npm run db:import
 ```
 
 The scripts read credentials from your `.env` file automatically (via Node's `--env-file` flag).
 
-**sessions.csv columns**: `id`, `day_id`, `sort_order`, `time`, `subject`, `task`, `method`, `is_break`
+**How import works:**
+- Rows **with an id** → UPDATE that session (planning columns only; progress data like `done`, `notes`, `confidence` is left untouched)
+- Rows **with a blank id** → INSERT as a new session
 
-- `sort_order`: controls the display order within a day (1, 2, 3...)
+**sessions.csv columns** (planning export): `id`, `date`, `label`, `focus`, `sort_order`, `time`, `subject`, `task`, `method`, `is_break`
+
+- `date`: ISO format `YYYY-MM-DD` — this is how sessions are grouped into days
+- `label`: human-readable day name shown in the tab, e.g. `Tuesday 18 Feb`
+- `focus`: motivational blurb shown at the top of the day view
+- `sort_order`: display order within a day (1, 2, 3…)
 - `method`: one of `Blurt`, `Past Paper`, `Feynman`, `Active Recall` (or blank)
 - `is_break`: `1` for break rows, `0` for study sessions
 
-Existing rows (with an id) are never modified or deleted by the import script.
+To move a session to a different day, just change its `date` (and update `label`/`focus` to match if needed).
 
-### ⚠️ Pitfalls
+### ⚠️ Pitfall: Excel and date columns
 
-**Don't re-import existing days.** The import script checks for a blank `id` to decide if a row is new. If you add existing days again with a blank id they'll be inserted as duplicates. Keep rows that already have ids, or remove them from the file entirely.
-
-**Don't use Excel to edit CSVs without protecting the date column.** Excel auto-reformats date-looking values (e.g. `2026-02-18` → `18/02/2026`) when you save. To prevent this: select the `date` column → Format Cells → **Text** *before* editing. Alternatively, use a plain text editor or Google Sheets (which doesn't reformat on CSV export).
-
-**Session `day_id` must be the actual DB id, not a row number.** When you add new days and import them, they get new DB ids (e.g. 16, 17, 18). Your session rows must use those ids — not the sequential 1, 2, 3... you might be tempted to type. Always export after importing days to confirm the ids before filling in sessions.
+Excel auto-reformats date-looking values (`2026-02-18` → `18/02/2026`) when you save as CSV. To prevent this: select the `date` column → Format Cells → **Text** _before_ editing. Google Sheets and plain text editors don't have this problem.
 
 ## Deployment
 
@@ -206,7 +195,8 @@ npm run preview      # Preview production build locally
 npm run lint         # Prettier + ESLint check
 npm run format       # Auto-format with Prettier
 npm run db:seed      # Seed local database
-npm run db:export    # Export days + sessions to data/*.csv
-npm run db:exportall # Export days + sessions with ALL columns to data/*.csv
-npm run db:import    # Import new CSV rows (blank id) into DB
+npm run db:migrate   # One-time migration from old days+sessions schema to flat sessions
+npm run db:export    # Export sessions to data/sessions.csv (planning columns)
+npm run db:exportall # Export sessions to data/sessions.csv (all columns incl. progress)
+npm run db:import    # Upsert from CSV: UPDATE rows with id, INSERT rows without
 ```

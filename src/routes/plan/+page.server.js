@@ -1,16 +1,17 @@
 import { db } from '$lib/db/index.js';
 import { sessions } from '$lib/db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { Resend } from 'resend';
 
 export async function load({ url }) {
-	// Get distinct days (date/label/focus) for the tab navigation
+	// Get one row per date for the tab navigation
 	const allDays = await db
-		.selectDistinct({ date: sessions.date, label: sessions.label, focus: sessions.focus })
+		.select({ date: sessions.date, label: sessions.label, focus: sessions.focus })
 		.from(sessions)
-		.orderBy(sessions.date);
+		.groupBy(sessions.date)
+		.orderBy(asc(sessions.date));
 
 	// Determine active date from query param (?day=YYYY-MM-DD), today, or most recent past day
 	const requestedDate = url.searchParams.get('day');
